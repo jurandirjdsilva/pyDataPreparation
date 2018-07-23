@@ -19,7 +19,7 @@ class Tweet:
 	def get_class(self):
 		return self.__clss
 
-	def get_id(self, length = 11):
+	def get_id(self, length = 15):
 		return str(self.__clss) + '_' + self.get_md5_hash()[0:length]
 
 	def get_message(self):
@@ -39,6 +39,9 @@ class Tweet:
 
 	def remove_symbols(self):
 		self.__message = ''.join(x for x in self.__message if x in alphabet or x in digits).strip()
+
+	def remove_stopwords(self):
+		self.__message = ' '.join(w for w in self.__message.split() if w not in nltk_sw.words())
 
 	def __str__(self):
 		return self.__clss+': '+self.__message
@@ -68,6 +71,10 @@ class TweetsAggregates:
 	def remove_symbols(self):
 		for t in self.__tweets:
 			t.remove_symbols()
+
+	def remove_stopwords(self):
+		for t in self.__tweets:
+			t.remove_stopwords()
 
 	def replacement_for_sinonimos(self):
 		# extrai todas as palavras usadas na base de tweets excluindo stopwords (nltk)
@@ -128,6 +135,8 @@ def save(tweets):
 	os.mkdir('output/')
 	with open('lista.csv', 'w') as F:
 		for t in tweets:
+			if len(t.get_message()) < 3:
+				continue
 			#            if len(t.get_message()) < 80:
 			#               continue
 			F.write('{},"{}","{}","{}"\n'.format(t.get_id(), t.get_class(), t.get_message(), t.get_original_message()))
@@ -146,23 +155,33 @@ if __name__=='__main__':
 	tweets = TweetsAggregates(base)
 	print('Ok!')
 	#print(tweets)
+	
+	opc = input('| Deseja realizar pré-processamento? (S/N) ')
+	if opc == 'S' or opc == 's':
 
-	save(tweets)
-	exit(0)
+		opc = input('| Deseja passar todas as letras para minúsculas? (S/N) ')
+		if opc == 'S' or opc == 's':
+			tweets.all_to_lower()
 
-	print('\n## Todos com letras minúsculas:')
-	tweets.all_to_lower()
-	print(tweets)
+		opc = input('| Deseja remover todos os símbolos não alfanuméricos? (S/N) ')
+		if opc == 'S' or opc == 's':
+			tweets.remove_symbols()
 
-	print('\n## Apenas letras e números (sem símbolos)')
-	tweets.remove_symbols()
-	print(tweets)
+		opc = input('| Deseja remover todas as stopwords (usando nltk.corpus)? (S/N) ')
+		if opc == 'S' or opc == 's':
+			tweets.remove_stopwords()
 
-	print('\n## Após substituição por sinônimos mais relevantes')
-	tweets.replacement_for_sinonimos()
-	print(tweets)
+		opc = input('| Deseja substituir cada palavra pelo sinônimo mais relevante? (S/N) ')
+		if opc == 'S' or opc == 's':
+			tweets.replacement_for_sinonimos()
 
-	print('\n## Após retirada de palavras que não se repetem')
-	tweets.remove_single_words2()
-	print(tweets)
-	save(tweets)
+
+		opc = input('| Deseja remover de cada tweet as palavras que não se repetem nos demais? (S/N) ')
+		if opc == 'S' or opc == 's':
+			tweets.remove_single_words2()
+
+		save(tweets)
+		exit(0)
+	else:
+		save(tweets)
+		exit(0)
